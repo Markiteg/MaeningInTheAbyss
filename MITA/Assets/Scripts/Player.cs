@@ -16,6 +16,12 @@ public class Player : MonoBehaviour
     public float TimeAFTDash;
     public float StartTimeAFTDash;
     public float DashSpeed;
+    public float TimeWallJump;
+    public float StartTimeWallJump;
+    public float upDownSpeed;
+    public float SlideSpeed;
+    public float JumpWallTime;
+    public Vector2 jumpAngle = new Vector2(3.5f, 10);
 
     private bool IsGround = false;
     private float JumpCount = 1;
@@ -26,6 +32,12 @@ public class Player : MonoBehaviour
     private bool IsSite;
     private bool IsCanStay;
     private bool IsWallLeft, IsWallRight;
+    private bool IsWall;
+    private float GravityDev;
+    private bool BlockMove = false;
+    private float TimerJumpWall;
+    private bool IsWallJumping = false;
+    
 
     private Rigidbody2D rb;
     private BoxCollider2D bc;
@@ -41,6 +53,7 @@ public class Player : MonoBehaviour
         IsSite = false;
         rb = GetComponent<Rigidbody2D>();
         bc = GetComponent<BoxCollider2D>();
+        GravityDev = rb.gravityScale;
     }
 
     void Update()
@@ -52,48 +65,93 @@ public class Player : MonoBehaviour
 
         if (Input.GetKey(KeyCode.A)) // Лево
         {
-            transform.Translate(Vector3.left * speed * Time.deltaTime);
-            IsSide = true;
+            if (!BlockMove)
+            {
+                transform.Translate(Vector3.left * speed * Time.deltaTime);
+                IsSide = true;
+            }
         }
         else if (Input.GetKey(KeyCode.D)) // Право
         {
-            transform.Translate(Vector3.right * speed * Time.deltaTime);
-            IsSide = false;
-        }
-
-        if (Input.GetKey(KeyCode.Space)) // Проверка на задержку пробела
-        {
-            if (IsGround)
-                JumpControl = true;
-        }
-        else
-            JumpControl = false;
-        if (JumpControl)
-        {
-            if (TimeJump > 0)
+            if (!BlockMove)
             {
-                rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-                TimeJump -= Time.deltaTime;
+                transform.Translate(Vector3.right * speed * Time.deltaTime);
+                IsSide = false;
             }
         }
-        else if (Input.GetKeyDown(KeyCode.Space) && !JumpControl && !IsGround && JumpCount > 0)
+
+        if (!BlockMove)
         {
-            JumpCount--;
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce + 1);
-        }
-        else if (IsGround)
-        {
-            TimeJump = StartTimeJump;
-            JumpCount = StartJumpCount;
-            DashCount = StartDashCount;
+            if (Input.GetKey(KeyCode.Space)) // Проверка на задержку пробела
+            {
+                if (IsGround)
+                    JumpControl = true;
+            }
+            else
+                JumpControl = false;
+            if (JumpControl)
+            {
+                if (TimeJump > 0)
+                {
+                    rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+                    TimeJump -= Time.deltaTime;
+                }
+            }
+            else if (Input.GetKeyDown(KeyCode.Space) && !JumpControl && !IsGround && JumpCount > 0)
+            {
+                JumpCount--;
+                rb.velocity = new Vector2(rb.velocity.x, jumpForce + 1);
+            }
+            else if (IsGround)
+            {
+                TimeJump = StartTimeJump;
+                JumpCount = StartJumpCount;
+                DashCount = StartDashCount;
+            }
         }
 
-        if (IsWallRight || IsWallLeft)
+        if (IsWallRight && !IsGround || IsWallLeft && !IsGround) //Проверка на стене игрок или нет
         {
             JumpCount = StartJumpCount;
             DashCount = StartDashCount;
+            IsWall = true;
+        }
+        else
+            IsWall = false;
 
-            rb.velocity = new Vector2(rb.velocity.x, 0.4f);
+        if (IsWall && !IsGround) //Скольжение игрока
+        {
+            rb.gravityScale = 0;
+            rb.velocity = new Vector2(0, SlideSpeed);
+
+            if (Input.GetKey(KeyCode.W))
+            {
+                rb.velocity = new Vector2(rb.velocity.x, upDownSpeed);
+            }
+        }
+        else if (!IsGround && !IsWall)
+            rb.gravityScale = GravityDev;
+
+        if (IsWall && !IsGround && Input.GetKey(KeyCode.Space))//Прыжок от стены(пока что не доработан)
+        {
+            BlockMove = true;
+            TimerJumpWall = JumpWallTime;
+            IsWallJumping = true;
+        }
+        if (BlockMove && TimerJumpWall <= 0)
+        {
+            BlockMove = false;
+            IsWallJumping = false;
+        }
+        else
+            TimerJumpWall -= Time.deltaTime;
+        if (IsWallJumping && IsWallLeft)
+        {
+            rb.velocity = new Vector2(jumpAngle.x, jumpAngle.y);
+        }
+        else if (IsWallJumping && IsWallRight)
+        {
+            rb.velocity = new Vector2(jumpAngle.x * -1, jumpAngle.y);
         }
 
         IsGround = Physics2D.OverlapCircle(GOisGround.transform.position, 0.1f, Ground); // Проверка на земле ли игрок
@@ -105,11 +163,14 @@ public class Player : MonoBehaviour
             Dash();
         else
         {
-            TimeBTWDash -= Time.deltaTime;
-            if (TimeAFTDash <= 0)
-                rb.velocity = new Vector2(0, rb.velocity.y);
-            else
-                TimeAFTDash -= Time.deltaTime;
+            if (!BlockMove)
+            {
+                TimeBTWDash -= Time.deltaTime;
+                if (TimeAFTDash <= 0)
+                    rb.velocity = new Vector2(0, rb.velocity.y); //Для нормального прыжка от стен, тут надо что то сделать
+                else
+                    TimeAFTDash -= Time.deltaTime;
+            }
         }
 
         if (Input.GetKeyDown(KeyCode.C)) //Приседания

@@ -728,6 +728,12 @@ MonoBehaviour:
   TimeAFTDash: -0.0015973563
   StartTimeAFTDash: 0.2
   DashSpeed: 25
+  TimeWallJump: 0
+  StartTimeWallJump: 0.5
+  upDownSpeed: 3
+  SlideSpeed: -2
+  JumpWallTime: 0.5
+  jumpAngle: {x: 3.5, y: 10}
   GOisGround: {fileID: 837766022}
   GOIsCanStay: {fileID: 1764199360}
   GOIsWallLeft: {fileID: 188536818}
