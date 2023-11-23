@@ -22,6 +22,7 @@ public class Player : MonoBehaviour
     public float SlideSpeed;
     public float JumpWallTime;
     public Vector2 jumpAngle = new Vector2(3.5f, 10);
+    public float FixYSpeed;
 
     private bool IsGround = false;
     private float JumpCount = 1;
@@ -37,6 +38,7 @@ public class Player : MonoBehaviour
     private bool BlockMove = false;
     private float TimerJumpWall;
     private bool IsWallJumping = false;
+    private bool IsDash = false;
     
 
     private Rigidbody2D rb;
@@ -132,7 +134,7 @@ public class Player : MonoBehaviour
         else if (!IsGround && !IsWall)
             rb.gravityScale = GravityDev;
 
-        if (IsWall && !IsGround && Input.GetKey(KeyCode.Space))//Прыжок от стены(пока что не доработан)
+        if (IsWall && !IsGround && Input.GetKey(KeyCode.Space))//Прыжок от стены
         {
             BlockMove = true;
             TimerJumpWall = JumpWallTime;
@@ -142,6 +144,7 @@ public class Player : MonoBehaviour
         {
             BlockMove = false;
             IsWallJumping = false;
+            rb.velocity = new Vector2(0, rb.velocity.y);
         }
         else
             TimerJumpWall -= Time.deltaTime;
@@ -163,11 +166,14 @@ public class Player : MonoBehaviour
             Dash();
         else
         {
+            TimeBTWDash -= Time.deltaTime;
             if (!BlockMove)
             {
-                TimeBTWDash -= Time.deltaTime;
-                if (TimeAFTDash <= 0)
-                    rb.velocity = new Vector2(0, rb.velocity.y); //Для нормального прыжка от стен, тут надо что то сделать
+                if (TimeAFTDash <= 0 && IsDash)
+                {
+                    rb.velocity = new Vector2(0, rb.velocity.y);
+                    IsDash = false;
+                }
                 else
                     TimeAFTDash -= Time.deltaTime;
             }
@@ -187,7 +193,14 @@ public class Player : MonoBehaviour
                 bc.offset = new Vector2(0, 0.3f);
                 bc.size = new Vector2(1, 2);
             }
+        }
 
+        if (rb.velocity.y < FixYSpeed) //Ограничения скорости падения
+            rb.velocity = new Vector2(rb.velocity.x, FixYSpeed);
+
+        if (Input.GetKey(KeyCode.F) && !IsGround && !IsWallLeft && !IsWallRight && rb.velocity.y < 0)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, -2);
         }
     }
 
@@ -201,6 +214,7 @@ public class Player : MonoBehaviour
                     rb.velocity = new Vector2(DashSpeed, rb.velocity.y);
                 else
                     rb.velocity = new Vector2(DashSpeed, 0);
+                IsDash = true;
                 DashCount--;
                 TimeBTWDash = StartTimeBTWDash;
                 TimeAFTDash = StartTimeAFTDash;
@@ -211,6 +225,7 @@ public class Player : MonoBehaviour
                     rb.velocity = new Vector2(DashSpeed, rb.velocity.y);
                 else
                     rb.velocity = new Vector2(DashSpeed, 0);
+                IsDash = true;
                 TimeBTWDash = StartTimeBTWDash;
                 TimeAFTDash = StartTimeAFTDash;
             }
@@ -225,6 +240,7 @@ public class Player : MonoBehaviour
                 else
                     rb.velocity = new Vector2(DashSpeed * -1, 0);
                 DashCount--;
+                IsDash = true;
                 TimeBTWDash = StartTimeBTWDash;
                 TimeAFTDash = StartTimeAFTDash;
             }
@@ -234,6 +250,7 @@ public class Player : MonoBehaviour
                     rb.velocity = new Vector2(DashSpeed * -1, rb.velocity.y);
                 else
                     rb.velocity = new Vector2(DashSpeed * -1, 0);
+                IsDash = true;
                 TimeBTWDash = StartTimeBTWDash;
                 TimeAFTDash = StartTimeAFTDash;
             }
