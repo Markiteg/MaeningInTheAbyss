@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 using UnityEngine.U2D;
 
 public class Player : MonoBehaviour
@@ -23,6 +24,15 @@ public class Player : MonoBehaviour
     public float JumpWallTime;
     public Vector2 jumpAngle = new Vector2(3.5f, 10);
     public float FixYSpeed;
+    public float timeBTWattack;
+    public float startTimeBTWAttack;
+    public Transform atkPos;
+    public float atkRange;
+    public LayerMask enemy;
+    public float weaponDamage;
+    public float health;
+    public float TimeBTWdmg;
+    public float StartTimeBTWdmg;
 
     private bool IsGround = false;
     private float JumpCount = 1;
@@ -43,6 +53,8 @@ public class Player : MonoBehaviour
 
     private Rigidbody2D rb;
     private BoxCollider2D bc;
+    private Animator anim;
+    private SpriteRenderer sr;
 
     public GameObject GOisGround;
     public GameObject GOIsCanStay;
@@ -55,7 +67,9 @@ public class Player : MonoBehaviour
         IsSite = false;
         rb = GetComponent<Rigidbody2D>();
         bc = GetComponent<BoxCollider2D>();
+        anim = GetComponent<Animator>();
         GravityDev = rb.gravityScale;
+        sr = GetComponentInChildren<SpriteRenderer>();
     }
 
     void Update()
@@ -65,12 +79,18 @@ public class Player : MonoBehaviour
             gameObject.transform.position = new Vector2(0, 0);
         }
 
+        if (IsSide)
+            sr.flipX = true;
+        else
+            sr.flipX = false;
+
         if (Input.GetKey(KeyCode.A)) // Лево
         {
             if (!BlockMove)
             {
                 transform.Translate(Vector3.left * speed * Time.deltaTime);
                 IsSide = true;
+                anim.SetBool("IsWalk", true);
             }
         }
         else if (Input.GetKey(KeyCode.D)) // Право
@@ -79,8 +99,11 @@ public class Player : MonoBehaviour
             {
                 transform.Translate(Vector3.right * speed * Time.deltaTime);
                 IsSide = false;
+                anim.SetBool("IsWalk", true);
             }
         }
+        else
+            anim.SetBool("IsWalk", false);
 
         if (!BlockMove)
         {
@@ -117,9 +140,13 @@ public class Player : MonoBehaviour
             JumpCount = StartJumpCount;
             DashCount = StartDashCount;
             IsWall = true;
+            anim.SetBool("InWall", true);
         }
         else
+        {
             IsWall = false;
+            anim.SetBool("InWall", false);
+        }
 
         if (IsWall && !IsGround) //Скольжение игрока
         {
@@ -202,6 +229,23 @@ public class Player : MonoBehaviour
         {
             rb.velocity = new Vector2(rb.velocity.x, -2);
         }
+
+        if (timeBTWattack <= 0)
+        {
+            //Attack();
+            //anim.SetBool("IsAttack", true);
+            //Collider2D[] player = Physics2D.OverlapCircleAll(atkPos.position, atkRange, enemy);
+            //for (int i = 0; i < player.Length; i++)
+            //{
+            //    player[i].GetComponent<Enemy>().Damage(weaponDamage);
+            //}
+            //timeBTWattack = startTimeBTWAttack;
+        }
+        else
+        {
+            timeBTWattack -= Time.deltaTime;
+            anim.SetBool("IsAttack", false);
+        }
     }
 
     public void Dash() //Дэш
@@ -253,6 +297,19 @@ public class Player : MonoBehaviour
                 IsDash = true;
                 TimeBTWDash = StartTimeBTWDash;
                 TimeAFTDash = StartTimeAFTDash;
+            }
+        }
+    }
+
+    public void Damage(float dmg)
+    {
+        if (health > 0)
+        {
+            if (TimeBTWdmg <= 0)
+            {
+                //anim.SetBool("DMG", true);
+                health -= dmg;
+                TimeBTWdmg = StartTimeBTWdmg;
             }
         }
     }
