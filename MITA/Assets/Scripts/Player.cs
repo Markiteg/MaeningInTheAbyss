@@ -24,7 +24,8 @@ public class Player : MonoBehaviour
     public float JumpWallTime;
     public Vector2 jumpAngle = new Vector2(3.5f, 10);
     public float FixYSpeed;
-    public float timeBTWattack;
+
+    public float timeBTWattack; //Часть кода для аттаки
     public float startTimeBTWAttack;
     public Transform atkPos;
     public float atkRange;
@@ -33,6 +34,9 @@ public class Player : MonoBehaviour
     public float health;
     public float TimeBTWdmg;
     public float StartTimeBTWdmg;
+    public float TimeAFTAttack;
+    public float StartAFTAttack;
+    public int AttackNum = 0;
 
     private bool IsGround = false;
     private float JumpCount = 1;
@@ -49,6 +53,7 @@ public class Player : MonoBehaviour
     private float TimerJumpWall;
     private bool IsWallJumping = false;
     private bool IsDash = false;
+    private bool IsAttack = false;
     
 
     private Rigidbody2D rb;
@@ -88,18 +93,24 @@ public class Player : MonoBehaviour
         {
             if (!BlockMove)
             {
-                transform.Translate(Vector3.left * speed * Time.deltaTime);
-                IsSide = true;
-                anim.SetBool("IsWalk", true);
+                if (!IsAttack)
+                {
+                    transform.Translate(Vector3.left * speed * Time.deltaTime);
+                    IsSide = true;
+                    anim.SetBool("IsWalk", true);
+                }
             }
         }
         else if (Input.GetKey(KeyCode.D)) // Право
         {
             if (!BlockMove)
             {
-                transform.Translate(Vector3.right * speed * Time.deltaTime);
-                IsSide = false;
-                anim.SetBool("IsWalk", true);
+                if (!IsAttack)
+                {
+                    transform.Translate(Vector3.right * speed * Time.deltaTime);
+                    IsSide = false;
+                    anim.SetBool("IsWalk", true);
+                }
             }
         }
         else
@@ -107,31 +118,34 @@ public class Player : MonoBehaviour
 
         if (!BlockMove)
         {
-            if (Input.GetKey(KeyCode.Space)) // Проверка на задержку пробела
+            if (!IsAttack)
             {
-                if (IsGround)
-                    JumpControl = true;
-            }
-            else
-                JumpControl = false;
-            if (JumpControl)
-            {
-                if (TimeJump > 0)
+                if (Input.GetKey(KeyCode.Space)) // Проверка на задержку пробела
                 {
-                    rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-                    TimeJump -= Time.deltaTime;
+                    if (IsGround)
+                        JumpControl = true;
                 }
-            }
-            else if (Input.GetKeyDown(KeyCode.Space) && !JumpControl && !IsGround && JumpCount > 0)
-            {
-                JumpCount--;
-                rb.velocity = new Vector2(rb.velocity.x, jumpForce + 1);
-            }
-            else if (IsGround)
-            {
-                TimeJump = StartTimeJump;
-                JumpCount = StartJumpCount;
-                DashCount = StartDashCount;
+                else
+                    JumpControl = false;
+                if (JumpControl)
+                {
+                    if (TimeJump > 0)
+                    {
+                        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+                        TimeJump -= Time.deltaTime;
+                    }
+                }
+                else if (Input.GetKeyDown(KeyCode.Space) && !JumpControl && !IsGround && JumpCount > 0)
+                {
+                    JumpCount--;
+                    rb.velocity = new Vector2(rb.velocity.x, jumpForce + 1);
+                }
+                else if (IsGround)
+                {
+                    TimeJump = StartTimeJump;
+                    JumpCount = StartJumpCount;
+                    DashCount = StartDashCount;
+                }
             }
         }
 
@@ -190,7 +204,10 @@ public class Player : MonoBehaviour
         IsWallRight = Physics2D.OverlapCircle(GOIsWallRight.transform.position, 0.1f, Ground); // Проверка есть ли стена справа
 
         if (Input.GetKeyDown(KeyCode.Q) && TimeBTWDash <= 0) //Активация Дэша
-            Dash();
+        {
+            if (!IsAttack)
+                Dash();
+        }
         else
         {
             TimeBTWDash -= Time.deltaTime;
@@ -229,23 +246,32 @@ public class Player : MonoBehaviour
         {
             rb.velocity = new Vector2(rb.velocity.x, -2);
         }
-
+        
         if (timeBTWattack <= 0)
         {
-            //Attack();
-            //anim.SetBool("IsAttack", true);
-            //Collider2D[] player = Physics2D.OverlapCircleAll(atkPos.position, atkRange, enemy);
-            //for (int i = 0; i < player.Length; i++)
-            //{
-            //    player[i].GetComponent<Enemy>().Damage(weaponDamage);
-            //}
-            //timeBTWattack = startTimeBTWAttack;
+            if (Input.GetMouseButtonDown(0) && IsGround)
+            {
+                if (AttackNum == 3)
+                    AttackNum = 0;
+                AttackNum++;
+                IsAttack = true;
+                TimeAFTAttack = StartAFTAttack;
+                timeBTWattack = startTimeBTWAttack;
+                anim.SetFloat("AttackNum", AttackNum);
+            }
         }
         else
         {
             timeBTWattack -= Time.deltaTime;
-            anim.SetBool("IsAttack", false);
         }
+        if (TimeAFTAttack <= 0)
+        {
+            AttackNum = 0;
+            IsAttack = false;
+            anim.SetFloat("AttackNum", AttackNum);
+        }
+        else
+            TimeAFTAttack -= Time.deltaTime;
     }
 
     public void Dash() //Дэш

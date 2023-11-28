@@ -737,7 +737,7 @@ MonoBehaviour:
   jumpAngle: {x: 5, y: 10}
   FixYSpeed: -12
   timeBTWattack: 0
-  startTimeBTWAttack: 0
+  startTimeBTWAttack: 0.25
   atkPos: {fileID: 0}
   atkRange: 0
   enemy:
@@ -747,6 +747,9 @@ MonoBehaviour:
   health: 0
   TimeBTWdmg: 0
   StartTimeBTWdmg: 0
+  TimeAFTAttack: 0
+  StartAFTAttack: 0.5
+  AttackNum: 0
   GOisGround: {fileID: 837766022}
   GOIsCanStay: {fileID: 1764199360}
   GOIsWallLeft: {fileID: 188536818}
